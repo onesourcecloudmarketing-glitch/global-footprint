@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<meta name="ext-resource-dependency" content="assets/onesource-logo.png" data-resource-id="logo" />
+<meta name="ext-resource-dependency" content="data/world-dots.json" data-resource-id="worldDots" />
+<template id="__bundler_thumbnail" data-bg-color="#F4F4F2">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#F4F4F2"/>
+    <circle cx="600" cy="400" r="250" fill="#ECEAE3" stroke="#D8D2C6" stroke-width="2"/>
+    <ellipse cx="600" cy="400" rx="250" ry="92" fill="none" stroke="#CFC8BB" stroke-width="2"/>
+    <ellipse cx="600" cy="400" rx="92" ry="250" fill="none" stroke="#CFC8BB" stroke-width="2"/>
+    <path d="M388 298 Q600 176 812 298" fill="none" stroke="#F04E30" stroke-width="4"/>
+    <circle cx="388" cy="298" r="13" fill="#F04E30"/>
+    <circle cx="812" cy="298" r="13" fill="#F04E30"/>
+    <circle cx="600" cy="505" r="11" fill="#F04E30"/>
+  </svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; }
+  body{ overflow:hidden; background:#F5F4F1; display:flex; align-items:center; justify-content:center; }
+  @keyframes lblIn{ from{ opacity:0; transform:translate(-50%,-120%) scale(.92);} to{ opacity:1; transform:translate(-50%,-140%) scale(1);} }
+</style>
+</helmet>
+
+<div ref="{{ rootRef }}" style="position:relative; width:1920px; height:1080px; overflow:hidden; background:#F4F4F2; font-family:'Manrope',system-ui,sans-serif; color:#17120F; user-select:none;">
+
+  <canvas ref="{{ baseRef }}" style="position:absolute; inset:0; width:1920px; height:1080px;"></canvas>
+  <div style="position:absolute; inset:0; pointer-events:none; background:radial-gradient(125% 78% at 50% 44%, rgba(240,78,48,0.07), rgba(240,78,48,0) 58%);"></div>
+  <canvas ref="{{ fxRef }}" onMouseMove="{{ onMove }}" onMouseLeave="{{ onMapLeave }}" onClick="{{ onMapClick }}" style="position:absolute; inset:0; width:1920px; height:1080px;"></canvas>
+
+  <!-- Logo -->
+  <img src="assets/onesource-logo.png" alt="OneSource Cloud" style="position:absolute; left:64px; top:54px; height:92px; z-index:30;">
+
+  <!-- View switcher -->
+  <div style="position:absolute; right:64px; top:56px; z-index:30; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+    <sc-if value="{{ showViews }}" hint-placeholder-val="{{ true }}">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#9A938B;">Compare views</div>
+      <div style="display:flex; gap:4px; padding:4px; background:rgba(255,255,255,0.72); border:1px solid rgba(23,18,15,0.08); border-radius:999px; backdrop-filter:blur(8px);">
+        <sc-for list="{{ views }}" as="v" hint-placeholder-count="3">
+          <button onClick="{{ v.onSelect }}" style="border:none; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; letter-spacing:0.01em; padding:8px 16px; border-radius:999px; transition:all .18s ease; background:{{ v.bg }}; color:{{ v.color }};">{{ v.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div style="display:flex; align-items:center; gap:10px; margin-top:2px;">
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.08em; color:{{ recStatusColor }};">{{ recStatus }}</span>
+      <button onClick="{{ onExport }}" title="Play a cinematic tour and save it as a video" style="display:flex; align-items:center; gap:8px; cursor:pointer; border:none; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; padding:9px 16px; border-radius:999px; transition:all .18s ease; box-shadow:0 6px 18px rgba(240,78,48,0.28); background:{{ exportBg }}; color:#fff;"><span style="width:9px; height:9px; border-radius:{{ exportDotRadius }}; background:#fff;"></span>{{ exportLabel }}</button>
+    </div>
+  </div>
+
+  <!-- ===================== ATLAS (Editorial) ===================== -->
+  <sc-if value="{{ isAtlas }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; left:64px; top:150px; width:300px; z-index:25; display:flex; flex-direction:column; gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#9A938B; margin-bottom:4px;">Global network · live</div>
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5">
+        <div style="display:flex; align-items:baseline; gap:14px; padding:15px 18px; background:rgba(255,255,255,0.66); border:1px solid rgba(23,18,15,0.06); border-radius:14px; backdrop-filter:blur(10px); box-shadow:0 6px 22px rgba(23,18,15,0.04);">
+          <div style="font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:30px; line-height:1; color:#F04E30; min-width:74px;">{{ s.disp }}</div>
+          <div style="font-size:12.5px; font-weight:600; letter-spacing:0.02em; line-height:1.25; color:#6E665E; text-transform:uppercase;">{{ s.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position:absolute; right:58px; top:0; height:1080px; z-index:25; display:flex; align-items:center; pointer-events:none;">
+      <div style="writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); display:flex; align-items:center; gap:28px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.34em; text-transform:uppercase; color:#A39B92;">OneSource Cloud — Global AI Infrastructure</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:96px; line-height:0.92; letter-spacing:0.01em; background:linear-gradient(168deg,#4A4036 0%,#221D18 72%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;">GLOBAL FOOTPRINT</div>
+        <div style="width:64px; height:4px; background:#F04E30;"></div>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:64px; bottom:54px; z-index:25; display:flex; gap:9px; flex-wrap:wrap; max-width:760px;">
+      <sc-for list="{{ regionPills }}" as="p" hint-placeholder-count="5">
+        <button onClick="{{ p.onClick }}" onMouseEnter="{{ p.onEnter }}" onMouseLeave="{{ p.onLeave }}" style="cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13.5px; padding:9px 17px; border-radius:999px; transition:all .16s ease; border:1px solid {{ p.border }}; background:{{ p.bg }}; color:{{ p.color }};">{{ p.label }}<span style="opacity:0.55; margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:11px;">{{ p.count }}</span></button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- ===================== BACKBONE (Cinematic) ===================== -->
+  <sc-if value="{{ isBackbone }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; top:96px; left:0; right:0; z-index:25; display:flex; justify-content:center; gap:9px;">
+      <sc-for list="{{ regionPills }}" as="p" hint-placeholder-count="5">
+        <button onClick="{{ p.onClick }}" onMouseEnter="{{ p.onEnter }}" onMouseLeave="{{ p.onLeave }}" style="cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13.5px; padding:9px 17px; border-radius:999px; transition:all .16s ease; border:1px solid {{ p.border }}; background:{{ p.bg }}; color:{{ p.color }};">{{ p.label }}<span style="opacity:0.55; margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:11px;">{{ p.count }}</span></button>
+      </sc-for>
+    </div>
+
+    <div style="position:absolute; left:0; right:0; bottom:150px; z-index:25; text-align:center; pointer-events:none;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.3em; text-transform:uppercase; color:#9AA3AC; margin-bottom:10px;">OneSource Cloud · Private AI Infrastructure</div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:58px; line-height:0.98; letter-spacing:0.01em; background:linear-gradient(168deg,#4A4036 0%,#221D18 72%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;">A Global Backbone, Built for AI</div>
+    </div>
+
+    <div style="position:absolute; left:0; right:0; bottom:0; height:140px; z-index:25; display:flex; align-items:center; justify-content:center; gap:0; background:linear-gradient(to top, rgba(239,242,245,0.96), rgba(239,242,245,0));">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:5px; padding:0 44px; border-right:1px solid rgba(23,18,15,0.08);">
+          <div style="font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:40px; line-height:1; color:#F04E30;">{{ s.disp }}</div>
+          <div style="font-size:11.5px; font-weight:600; letter-spacing:0.08em; color:#6E665E; text-transform:uppercase;">{{ s.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- ===================== CONSOLE (Dashboard) ===================== -->
+  <sc-if value="{{ isConsole }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; right:0; top:0; bottom:0; width:520px; z-index:25; background:rgba(255,255,255,0.88); border-left:1px solid rgba(23,18,15,0.08); backdrop-filter:blur(14px); padding:120px 40px 40px; display:flex; flex-direction:column; gap:22px; overflow:auto;">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:#A39B92;">Global AI Infrastructure</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:40px; line-height:1.02; background:linear-gradient(168deg,#4A4036 0%,#221D18 72%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; margin-top:6px;">Global Footprint</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5">
+          <div style="padding:14px 16px; background:#F7F6F3; border:1px solid rgba(23,18,15,0.06); border-radius:12px;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:26px; line-height:1; color:#F04E30;">{{ s.disp }}</div>
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.04em; color:#6E665E; text-transform:uppercase; margin-top:6px;">{{ s.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#A39B92;">Regions &amp; cities</div>
+        <button onClick="{{ onClearFocus }}" style="cursor:pointer; border:1px solid rgba(23,18,15,0.12); background:{{ allBg }}; color:{{ allColor }}; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12px; padding:6px 12px; border-radius:999px;">Show all</button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <sc-for list="{{ regionGroups }}" as="g" hint-placeholder-count="4">
+          <div style="border:1px solid {{ g.border }}; border-radius:14px; overflow:hidden; background:{{ g.headBg }};">
+            <button onClick="{{ g.onClick }}" onMouseEnter="{{ g.onEnter }}" onMouseLeave="{{ g.onLeave }}" style="width:100%; cursor:pointer; border:none; background:transparent; display:flex; align-items:center; justify-content:space-between; padding:13px 16px; font-family:'Space Grotesk',sans-serif;">
+              <span style="display:flex; align-items:center; gap:10px;"><span style="width:9px; height:9px; border-radius:50%; background:#F04E30;"></span><span style="font-weight:600; font-size:15px; color:{{ g.titleColor }};">{{ g.name }}</span></span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8C857D;">{{ g.citiesLabel }}</span>
+            </button>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 14px;">
+              <sc-for list="{{ g.cities }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.onClick }}" style="cursor:pointer; font-family:'Manrope',sans-serif; font-weight:600; font-size:12.5px; padding:6px 11px; border-radius:8px; border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.color }};">{{ c.name }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== Shared overlays ===================== -->
+  <sc-for list="{{ activeLabels }}" as="l" hint-placeholder-count="0">
+    <div style="position:absolute; z-index:28; pointer-events:none; left:{{ l.x }}px; top:{{ l.y }}px; transform:translate(-50%,-140%); animation:lblIn .22s ease both;">
+      <div style="display:flex; align-items:center; gap:7px; padding:5px 11px; background:#17120F; color:#fff; border-radius:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; white-space:nowrap; box-shadow:0 8px 20px rgba(23,18,15,0.22);">{{ l.name }}</div>
+    </div>
+  </sc-for>
+
+  <sc-if value="{{ hoverObj }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; z-index:29; pointer-events:none; left:{{ hoverObj.x }}px; top:{{ hoverObj.y }}px; transform:translate(-50%,-150%);">
+      <div style="padding:5px 11px; background:#F04E30; color:#fff; border-radius:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; white-space:nowrap; box-shadow:0 8px 18px rgba(240,78,48,0.32);">{{ hoverObj.name }}</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ selObj }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; z-index:31; left:{{ selObj.x }}px; top:{{ selObj.y }}px; transform:translate(-50%,-128%);">
+      <div style="position:relative; padding:14px 18px; background:#fff; border:1px solid rgba(23,18,15,0.1); border-radius:14px; box-shadow:0 16px 40px rgba(23,18,15,0.16); min-width:184px;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; color:#17120F; line-height:1.1;">{{ selObj.name }}</div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#9A938B; margin-top:4px;">{{ selObj.regionName }}</div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; font-size:12px; font-weight:600; color:#6E665E;"><span style="width:7px;height:7px;border-radius:50%;background:#F04E30;"></span>Data center · ISP peering POP</div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;hero&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;direction&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;atlas&quot;,&quot;backbone&quot;,&quot;console&quot;],&quot;default&quot;:&quot;console&quot;,&quot;tsType&quot;:&quot;'atlas'|'backbone'|'console'&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F04E30&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { direction: null, focusRegion: null, previewRegion: null, hoverCity: null, selectedCity: null, counts: [0,0,0,0,0], tour:false, recording:false, recStatus:'' };
+
+  cities = [
+    { id:'la',  name:'Los Angeles',     region:'na', lat:34.05,  lon:-118.24 },
+    { id:'dal', name:'Dallas',          region:'na', lat:32.78,  lon:-96.80 },
+    { id:'mia', name:'Miami',           region:'na', lat:25.76,  lon:-80.19 },
+    { id:'vir', name:'Virginia',        region:'na', lat:38.95,  lon:-77.45 },
+    { id:'sao', name:'São Paulo',       region:'sa', lat:-23.55, lon:-46.63 },
+    { id:'ams', name:'Amsterdam',       region:'eu', lat:52.37,  lon:4.90 },
+    { id:'mar', name:'Marseille',       region:'eu', lat:43.30,  lon:5.37 },
+    { id:'sar', name:'Sarajevo',        region:'eu', lat:43.85,  lon:18.41 },
+    { id:'fra', name:'Frankfurt',       region:'eu', lat:50.11,  lon:8.68 },
+    { id:'mum', name:'Mumbai',          region:'as', lat:19.08,  lon:72.88 },
+    { id:'sin', name:'Singapore',       region:'as', lat:1.35,   lon:103.82 },
+    { id:'jak', name:'Jakarta',         region:'as', lat:-6.21,  lon:106.85 },
+    { id:'hcm', name:'Ho Chi Minh City',region:'as', lat:10.82,  lon:106.63 },
+    { id:'gua', name:'Guangzhou',       region:'as', lat:23.13,  lon:113.26 },
+    { id:'shz', name:'Shenzhen',        region:'as', lat:22.54,  lon:114.06 },
+    { id:'hk',  name:'Hong Kong',       region:'as', lat:22.32,  lon:114.17 },
+    { id:'bei', name:'Beijing',         region:'as', lat:39.90,  lon:116.41 },
+    { id:'seo', name:'Seoul',           region:'as', lat:37.57,  lon:126.98 },
+    { id:'tok', name:'Tokyo',           region:'as', lat:35.68,  lon:139.65 }
+  ];
+  links = [
+    ['la','dal'],['dal','mia'],['dal','vir'],['mia','vir'],
+    ['mia','sao'],['dal','sao'],
+    ['vir','ams'],['vir','fra'],['sao','ams'],
+    ['ams','fra'],['fra','mar'],['fra','sar'],
+    ['mar','mum'],['fra','mum'],
+    ['mum','sin'],['sin','jak'],['sin','hcm'],['sin','hk'],
+    ['hk','gua'],['hk','shz'],['gua','shz'],['hk','bei'],
+    ['bei','seo'],['seo','tok'],['hk','tok']
+  ];
+  regions = [
+    { id:'na', name:'North America' },
+    { id:'sa', name:'South America' },
+    { id:'eu', name:'Europe' },
+    { id:'as', name:'Asia' }
+  ];
+  stats = [
+    { v:'50+',  l:'Countries' },
+    { v:'89',   l:'Cities' },
+    { v:'400+', l:'ISP Peering' },
+    { v:'100+', l:'Submarine Cables' },
+    { v:'94',   l:'Data Centers' }
+  ];
+
+  D2R = Math.PI/180;
+  THEMES = {
+    atlas:    { page:'#F4F4F2', ocean:'#ECEAE3', rim:'#D8D2C6', dot:'#C3BBAC', dotR:1.55, arcW:1.3, glow:8,  cityR:3.4, packetR:2.2, packets:1, baseA:0.46, ink:'#3A332D' },
+    backbone: { page:'#E9ECF1', ocean:'#DCE2E9', rim:'#BFC8D2', dot:'#A6B0BC', dotR:1.65, arcW:2.0, glow:16, cityR:3.9, packetR:2.9, packets:2, baseA:0.58, ink:'#2A3138' },
+    console:  { page:'#F5F4F1', ocean:'#ECEAE3', rim:'#D6D0C4', dot:'#C6BEAF', dotR:1.5,  arcW:1.2, glow:7,  cityR:3.2, packetR:2.0, packets:1, baseA:0.46, ink:'#3A332D' }
+  };
+
+  heroOn(){ return this.props.hero!==false; }
+  get dir(){ if(this.heroOn()) return 'console'; return this.state.direction || this.props.direction || 'console'; }
+  fit(){ if(!this.root) return; const s=Math.min(window.innerWidth/1920, window.innerHeight/1080); this.root.style.transform='scale('+s+')'; this.root.style.transformOrigin='center center'; }
+  theme(){ return this.THEMES[this.dir]; }
+  accent(){ return this.props.accent || '#F04E30'; }
+
+  rgba(hex, a){
+    const h = hex.replace('#','');
+    const f = h.length===3 ? h.split('').map(c=>c+c).join('') : h;
+    const n = parseInt(f,16);
+    return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+  }
+
+  computeGlobe(dir){
+    if(dir==='console')  return { cx:690, cy:560, R:402 };
+    if(dir==='backbone') return { cx:960, cy:462, R:300 };
+    return { cx:960, cy:566, R:430 };
+  }
+  setGeom(){ const g=this.computeGlobe(this.dir); this.cx=g.cx; this.cy=g.cy; this.R=g.R; }
+
+  llToVec(lat,lon){ const la=lat*this.D2R, lo=lon*this.D2R;
+    return { x:Math.cos(la)*Math.sin(lo), y:Math.sin(la), z:Math.cos(la)*Math.cos(lo) }; }
+  slerpVec(a,b,t){
+    let d=a.x*b.x+a.y*b.y+a.z*b.z; d=Math.max(-1,Math.min(1,d));
+    const om=Math.acos(d), so=Math.sin(om)||1e-6;
+    const s1=Math.sin((1-t)*om)/so, s2=Math.sin(t*om)/so;
+    return { x:a.x*s1+b.x*s2, y:a.y*s1+b.y*s2, z:a.z*s1+b.z*s2 };
+  }
+  // project a unit vector (optionally lifted) using current rot+tilt
+  projVec(v, alt){
+    const a=this.rot||0, t=this.tilt||0, R=this.R*(1+(alt||0));
+    let x=v.x*Math.cos(a)+v.z*Math.sin(a);
+    let z=-v.x*Math.sin(a)+v.z*Math.cos(a);
+    let y=v.y;
+    const y2=y*Math.cos(t)-z*Math.sin(t);
+    const z2=y*Math.sin(t)+z*Math.cos(t);
+    return { x:this.cx+x*R, y:this.cy-y2*R, z:z2 };
+  }
+  angNorm(x){ while(x>Math.PI)x-=2*Math.PI; while(x<-Math.PI)x+=2*Math.PI; return x; }
+  clampTilt(t){ return Math.max(-0.62, Math.min(0.62, t)); }
+
+  rootRef = (el)=>{ this.root=el; if(el) this.fit(); };
+  baseRef = (el)=>{ if(el && el!==this.base){ this.base=el; this.bctx=null; this.setupCanvas(); } };
+  fxRef   = (el)=>{ if(el && el!==this.fx){ this.fx=el; this.fctx=null; this.setupCanvas(); } };
+  setupCanvas(){
+    const dpr = this.dpr = Math.min(2, window.devicePixelRatio||1);
+    if(this.base && !this.bctx){ this.base.width=1920*dpr; this.base.height=1080*dpr; this.bctx=this.base.getContext('2d'); this.bctx.scale(dpr,dpr); this._drawnDir=null; }
+    if(this.fx && !this.fctx){ this.fx.width=1920*dpr; this.fx.height=1080*dpr; this.fctx=this.fx.getContext('2d'); this.fctx.scale(dpr,dpr); }
+  }
+  componentDidMount(){
+    this.cityById = {};
+    this.cities.forEach(c=>{ this.cityById[c.id]=c; c._ph=Math.random()*2600; c.vec=this.llToVec(c.lat,c.lon); });
+    // region centers (avg lat/lon) for focus rotation
+    this.regionCenters={};
+    this.regions.forEach(r=>{
+      const cs=this.cities.filter(c=>c.region===r.id);
+      const lat=cs.reduce((s,c)=>s+c.lat,0)/cs.length;
+      const lon=cs.reduce((s,c)=>s+c.lon,0)/cs.length;
+      this.regionCenters[r.id]={lat,lon};
+    });
+    this.defaultTilt=0.34; this.rot=-1.7; this.tilt=this.defaultTilt;
+    this.logoImg=new Image(); this.logoImg.src=(window.__resources&&window.__resources.logo)||'assets/onesource-logo.png';
+    this.setupCanvas();
+    this.fit(); this._onResize=()=>this.fit(); window.addEventListener('resize', this._onResize);
+    if(!this.state.direction) this.setState({ direction: this.props.direction || 'console' });
+    this.startCounts();
+    fetch((window.__resources&&window.__resources.worldDots)||'data/world-dots.json').then(r=>r.json())
+      .then(d=>{ this.dotVecs=d.map(p=>{ const lon=p[0]/1000*360-180, lat=90-p[1]/1000*180; return this.llToVec(lat,lon); }); this._drawnDir=null; this.frame(); })
+      .catch(e=>console.warn('map data load failed', e));
+    this._drawnDir=null;
+    this.frame();
+    this.startLoop();
+  }
+  startLoop(){ clearInterval(this._loop); this._loop=setInterval(this.frame, 33); }
+  componentWillUnmount(){ clearInterval(this._loop); clearInterval(this._ci); if(this._onResize) window.removeEventListener('resize', this._onResize); }
+
+  startCounts(){
+    clearInterval(this._ci);
+    const targets=this.stats.map(s=>parseInt(s.v,10));
+    const start=performance.now(), dur=1150;
+    this._ci=setInterval(()=>{
+      const t=Math.min(1,(performance.now()-start)/dur);
+      const e=1-Math.pow(1-t,3);
+      this.setState({ counts: targets.map(v=>Math.round(v*e)) });
+      if(t>=1) clearInterval(this._ci);
+    }, 33);
+  }
+
+  drawBase(){
+    if(!this.bctx) return;
+    const ctx=this.bctx, T=this.theme(), acc=this.accent();
+    const g=this.computeGlobe(this.dir), cx=g.cx, cy=g.cy, R=g.R;
+    ctx.clearRect(0,0,1920,1080);
+    ctx.fillStyle=T.page; ctx.fillRect(0,0,1920,1080);
+
+    // contact shadow under the globe
+    ctx.save();
+    const sh=ctx.createRadialGradient(cx, cy+R*0.92, R*0.2, cx, cy+R*0.92, R*0.95);
+    sh.addColorStop(0,'rgba(23,18,15,0.16)'); sh.addColorStop(1,'rgba(23,18,15,0)');
+    ctx.fillStyle=sh; ctx.beginPath();
+    ctx.ellipse(cx, cy+R*0.96, R*0.86, R*0.18, 0, 0, 6.2832); ctx.fill();
+    ctx.restore();
+
+    // atmosphere halo
+    const at=ctx.createRadialGradient(cx, cy, R*0.97, cx, cy, R*1.16);
+    at.addColorStop(0, this.rgba(acc,0.0));
+    at.addColorStop(0.55, this.rgba(acc,0.10));
+    at.addColorStop(1, this.rgba(acc,0));
+    ctx.fillStyle=at; ctx.beginPath(); ctx.arc(cx, cy, R*1.16, 0, 6.2832); ctx.fill();
+
+    // ocean sphere
+    const oc=ctx.createRadialGradient(cx-R*0.32, cy-R*0.34, R*0.1, cx, cy, R*1.04);
+    oc.addColorStop(0, '#FBFAF7');
+    oc.addColorStop(0.55, T.ocean);
+    oc.addColorStop(1, T.rim);
+    ctx.fillStyle=oc; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832); ctx.fill();
+
+    this._drawnDir=this.dir;
+  }
+
+  updateRotation(){
+    const sel=this.state.selectedCity, fr=this.state.focusRegion||this.state.previewRegion, hov=this.state.hoverCity;
+    let tr=this.rot, tt=this.defaultTilt, spin=false;
+    if(sel){ const c=this.cityById[sel]; tr=-c.lon*this.D2R; tt=this.clampTilt(c.lat*this.D2R); }
+    else if(fr){ const r=this.regionCenters[fr]; tr=-r.lon*this.D2R; tt=this.clampTilt(r.lat*this.D2R); }
+    else if(hov){ tr=this.rot; tt=this.tilt; }
+    else { spin=true; }
+    let moved=false;
+    if(spin){ this.rot+=0.0019; this.tilt+=(this.defaultTilt-this.tilt)*0.05; }
+    else {
+      const d=this.angNorm(tr-this.rot);
+      this.rot+=d*0.12; this.tilt+=(tt-this.tilt)*0.12;
+      if(Math.abs(d)>0.0025 || Math.abs(tt-this.tilt)>0.0025) moved=true;
+    }
+    // keep HTML callout glued to the city while the globe eases into place
+    if((sel||fr) && moved) this.forceUpdate();
+  }
+
+  frame = ()=>{
+    if((!this.fctx && this.fx) || (!this.bctx && this.base)) this.setupCanvas();
+    if(!this.fctx) return;
+    const ts=performance.now();
+    if(this.state.tour) this.tourTick(ts);
+    if(this._drawnDir!==this.dir) this.drawBase();
+    this.setGeom();
+    this.updateRotation();
+    const ctx=this.fctx, T=this.theme(), acc=this.accent(), R=this.R, cx=this.cx, cy=this.cy;
+    const hl=this.state.focusRegion||this.state.previewRegion;
+    ctx.clearRect(0,0,1920,1080);
+    ctx.lineCap='round'; ctx.lineJoin='round';
+
+    // ---- land dots (back-face culled, two depth buckets) ----
+    if(this.dotVecs){
+      const near=[], far=[];
+      for(let i=0;i<this.dotVecs.length;i++){
+        const P=this.projVec(this.dotVecs[i],0);
+        if(P.z<=0.02) continue;
+        (P.z>0.55?near:far).push(P);
+      }
+      ctx.fillStyle=this.rgba(T.dot,0.34);
+      ctx.beginPath();
+      for(const P of far){ ctx.moveTo(P.x+T.dotR*0.82,P.y); ctx.arc(P.x,P.y,T.dotR*0.82,0,6.2832); }
+      ctx.fill();
+      ctx.fillStyle=this.rgba(T.dot,0.85);
+      ctx.beginPath();
+      for(const P of near){ ctx.moveTo(P.x+T.dotR,P.y); ctx.arc(P.x,P.y,T.dotR,0,6.2832); }
+      ctx.fill();
+    }
+
+    // ---- volume shading (sphere lighting) ----
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,6.2832); ctx.clip();
+    const vg=ctx.createRadialGradient(cx-R*0.34,cy-R*0.36,R*0.15, cx,cy,R*1.05);
+    vg.addColorStop(0,'rgba(255,255,255,0.30)');
+    vg.addColorStop(0.45,'rgba(255,255,255,0)');
+    vg.addColorStop(0.78,'rgba(23,18,15,0)');
+    vg.addColorStop(1,'rgba(23,18,15,0.20)');
+    ctx.fillStyle=vg; ctx.fillRect(cx-R,cy-R,2*R,2*R);
+    ctx.restore();
+
+    // ---- great-circle arcs (only when both endpoints face the viewer) ----
+    const SEG=40;
+    for(let i=0;i<this.links.length;i++){
+      const a=this.cityById[this.links[i][0]], b=this.cityById[this.links[i][1]];
+      if(!a||!b) continue;
+      const PA=this.projVec(a.vec,0), PB=this.projVec(b.vec,0);
+      if(PA.z<=0.04 || PB.z<=0.04) continue;
+      const inHl = !hl || a.region===hl || b.region===hl;
+      ctx.beginPath();
+      for(let s=0;s<=SEG;s++){
+        const t=s/SEG, alt=Math.sin(Math.PI*t)*0.17;
+        const P=this.projVec(this.slerpVec(a.vec,b.vec,t), alt);
+        if(s===0) ctx.moveTo(P.x,P.y); else ctx.lineTo(P.x,P.y);
+      }
+      ctx.strokeStyle=this.rgba(acc, inHl?T.baseA:0.10);
+      ctx.lineWidth=T.arcW*(inHl?1:0.8);
+      if(inHl){ ctx.shadowColor=acc; ctx.shadowBlur=T.glow; } else ctx.shadowBlur=0;
+      ctx.stroke(); ctx.shadowBlur=0;
+
+      if(inHl){
+        for(let k=0;k<T.packets;k++){
+          const tt=((ts/3000)+(i*0.13)+(k/T.packets))%1;
+          const alt=Math.sin(Math.PI*tt)*0.17;
+          const P=this.projVec(this.slerpVec(a.vec,b.vec,tt), alt);
+          if(P.z<=0) continue;
+          ctx.beginPath(); ctx.arc(P.x,P.y,T.packetR+2.4,0,6.2832); ctx.fillStyle=this.rgba(acc,0.18); ctx.fill();
+          ctx.beginPath(); ctx.arc(P.x,P.y,T.packetR,0,6.2832); ctx.fillStyle='#fff'; ctx.shadowColor=acc; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+        }
+      }
+    }
+
+    // ---- city markers (front hemisphere) ----
+    const labels=[];
+    for(const c of this.cities){
+      const P=this.projVec(c.vec,0);
+      if(P.z<=0.06) continue;
+      const on=!hl || c.region===hl;
+      const isSel=this.state.selectedCity===c.id;
+      const isHov=this.state.hoverCity===c.id;
+      const lit=isSel||isHov;
+      if(on){
+        const PT=2600, p=((ts+c._ph)%PT)/PT, pr=T.cityR+p*(lit?22:15);
+        ctx.beginPath(); ctx.arc(P.x,P.y,pr,0,6.2832);
+        ctx.strokeStyle=this.rgba(acc,(1-p)*(lit?0.7:0.30)); ctx.lineWidth=1.2; ctx.stroke();
+      }
+      const r=T.cityR*(lit?1.8:1)*(on?1:0.7);
+      ctx.beginPath(); ctx.arc(P.x,P.y,r+(on?2.6:1.5),0,6.2832); ctx.fillStyle=this.rgba('#ffffff',on?0.95:0.55); ctx.fill();
+      ctx.beginPath(); ctx.arc(P.x,P.y,r,0,6.2832); ctx.fillStyle=this.rgba(acc,on?1:0.5);
+      if(on){ ctx.shadowColor=acc; ctx.shadowBlur=lit?22:8; } ctx.fill(); ctx.shadowBlur=0;
+      labels.push({ c, P, on, lit });
+    }
+
+    // ---- name labels (highlighted drawn last, on top) ----
+    labels.sort((m,n)=> (m.lit?1:0)-(n.lit?1:0) || m.P.z-n.P.z);
+    ctx.textBaseline='middle';
+    for(const o of labels){
+      const lit=o.lit, on=o.on;
+      const fade=Math.max(0, Math.min(1, (o.P.z-0.06)/0.22));
+      const baseA=(on?0.95:0.4)*(lit?1:fade);
+      if(baseA<=0.02) continue;
+      const fs=lit?16:13;
+      ctx.font=(lit?'700 ':'600 ')+fs+'px "Space Grotesk", system-ui, sans-serif';
+      const tw=ctx.measureText(o.c.name).width;
+      const lx=o.P.x+ (lit?13:10), ly=o.P.y - (lit?0.5:0);
+      if(lit){
+        const padX=9, h=24, w=tw+padX*2, ry=ly-h/2;
+        ctx.fillStyle=acc; ctx.beginPath();
+        if(ctx.roundRect){ ctx.roundRect(lx-4, ry, w, h, 7); } else { ctx.rect(lx-4, ry, w, h); }
+        ctx.shadowColor=this.rgba(acc,0.5); ctx.shadowBlur=14; ctx.fill(); ctx.shadowBlur=0;
+        ctx.fillStyle='#fff'; ctx.fillText(o.c.name, lx-4+padX, ly+0.5);
+      } else {
+        ctx.lineWidth=3.2; ctx.strokeStyle=this.rgba(T.page, 0.92*baseA); ctx.strokeText(o.c.name, lx, ly);
+        ctx.fillStyle=this.rgba(T.ink, baseA); ctx.fillText(o.c.name, lx, ly);
+      }
+    }
+
+    if(this.state.recording) this.composeRec();
+  };
+
+  // ---- interaction ----
+  toLogical(e){
+    const r=this.fx.getBoundingClientRect();
+    return { x:(e.clientX-r.left)*(1920/r.width), y:(e.clientY-r.top)*(1080/r.height) };
+  }
+  onMove = (e)=>{
+    this.setGeom();
+    const m=this.toLogical(e);
+    let best=null, bd=24;
+    for(const c of this.cities){
+      const P=this.projVec(c.vec,0);
+      if(P.z<=0.06) continue;
+      const d=Math.hypot(P.x-m.x, P.y-m.y);
+      if(d<bd){ bd=d; best=c.id; }
+    }
+    if(best!==this.state.hoverCity) this.setState({ hoverCity:best });
+    if(this.fx) this.fx.style.cursor = best ? 'pointer' : 'default';
+  };
+  onMapLeave = ()=>{ if(this.state.hoverCity) this.setState({ hoverCity:null }); };
+  onMapClick = ()=>{
+    const h=this.state.hoverCity;
+    if(h){ this.setState({ selectedCity: this.state.selectedCity===h ? null : h }); }
+    else { this.setState({ selectedCity:null }); }
+  };
+
+  setDir(k){ this.setState({ direction:k, focusRegion:null, selectedCity:null, hoverCity:null }); this.startCounts(); }
+  toggleRegion(id){ this.setState(s=>({ focusRegion: s.focusRegion===id?null:id, selectedCity:null })); }
+  previewRegion(id){ this.setState({ previewRegion:id }); }
+  clearPreview(){ this.setState({ previewRegion:null }); }
+  selectCity(id){ this.setState({ selectedCity:id, focusRegion: this.cityById[id].region }); }
+
+  // ---- cinematic tour ----
+  TOUR = [
+    { t:0,     region:null, title:'Global Footprint',   sub:'Private AI infrastructure, built for global scale' },
+    { t:5000,  region:'na', title:'North America',      sub:'Major North American connectivity hubs' },
+    { t:11500, region:'eu', title:'Europe',             sub:'High-capacity European backbone' },
+    { t:18000, region:'as', title:'Asia',               sub:"The world's fastest-growing AI markets" },
+    { t:27000, region:'sa', title:'South America',      sub:'Extending high-speed connectivity south' },
+    { t:33000, region:null, title:'OneSource Cloud',    sub:'50+ countries · 94 data centers · one global fabric' }
+  ];
+  TOUR_END = 39000;
+
+  startTour(record){
+    this.tourT0=performance.now();
+    this._capTitle=this.TOUR[0].title; this._capSub=this.TOUR[0].sub; this._capAt=0;
+    this.setState({ tour:true, focusRegion:null, selectedCity:null, hoverCity:null });
+    if(record) this.startRecording();
+  }
+  endTour(){
+    this.setState({ tour:false, focusRegion:null });
+    if(this.mr && this.mr.state!=='inactive') this.mr.stop();
+  }
+  tourTick(ts){
+    const el=ts-this.tourT0;
+    if(el>=this.TOUR_END){ this.endTour(); return; }
+    let step=this.TOUR[0];
+    for(const s of this.TOUR){ if(el>=s.t) step=s; }
+    this._capTitle=step.title; this._capSub=step.sub;
+    // caption fade-in progress for the current step
+    this._capAt=Math.min(1,(el-step.t)/600);
+    if(this.state.focusRegion!==step.region) this.setState({ focusRegion:step.region });
+  }
+
+  startRecording(){
+    try{
+      this.rec=document.createElement('canvas'); this.rec.width=1920; this.rec.height=1080;
+      this.rctx=this.rec.getContext('2d');
+      let stream; this.recManual=false; this.recTrack=null;
+      try{
+        stream=this.rec.captureStream(0);
+        const tr=stream.getVideoTracks()[0];
+        if(tr && typeof tr.requestFrame==='function'){ this.recTrack=tr; this.recManual=true; }
+        else { stream=this.rec.captureStream(30); }
+      }catch(e){ stream=this.rec.captureStream(30); }
+      const types=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+      const mime=types.find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t))||'video/webm';
+      this.mr=new MediaRecorder(stream,{ mimeType:mime, videoBitsPerSecond:14000000 });
+      this.chunks=[];
+      this.mr.ondataavailable=e=>{ if(e.data&&e.data.size) this.chunks.push(e.data); };
+      this.mr.onstop=()=>{
+        const blob=new Blob(this.chunks,{type:'video/webm'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download='onesource-global-footprint.webm';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),2000);
+        this.setState({ recording:false, recStatus:'Saved ✓' });
+        setTimeout(()=>this.setState({ recStatus:'' }),2600);
+      };
+      this.mr.start(100);
+      this.setState({ recording:true, recStatus:'Recording…' });
+    }catch(e){ console.warn('record failed',e); this.setState({ recStatus:'Not supported' }); this.startTour(false); }
+  }
+
+  composeRec(){
+    if(!this.rctx||!this.base||!this.fx) return;
+    const x=this.rctx, T=this.theme(), acc=this.accent();
+    x.clearRect(0,0,1920,1080);
+    x.fillStyle=T.page; x.fillRect(0,0,1920,1080);
+    x.drawImage(this.base,0,0,1920,1080);
+    x.drawImage(this.fx,0,0,1920,1080);
+    // logo
+    const li=this.logoImg;
+    if(li&&li.complete&&li.naturalWidth){ const h=70, w=h*li.naturalWidth/li.naturalHeight; x.drawImage(li,64,46,w,h); }
+    // caption block (lower third)
+    const a=this._capAt==null?1:this._capAt, ease=a*a*(3-2*a);
+    x.save(); x.textAlign='center'; x.globalAlpha=ease;
+    x.font="600 15px 'IBM Plex Mono', monospace"; x.fillStyle=this.rgba(acc,0.95);
+    x.fillText('ONESOURCE CLOUD · GLOBAL AI INFRASTRUCTURE', 960, 858);
+    x.font="700 60px 'Space Grotesk', system-ui, sans-serif"; x.fillStyle='#2A241F';
+    x.fillText(this._capTitle||'', 960, 918);
+    x.font="500 22px 'Manrope', system-ui, sans-serif"; x.fillStyle='#6E665E';
+    x.fillText(this._capSub||'', 960, 958);
+    x.restore();
+    // stat strip
+    const stats=[['50+','COUNTRIES'],['89','CITIES'],['400+','ISP PEERING'],['100+','SUBMARINE CABLES'],['94','DATA CENTERS']];
+    const n=stats.length, gap=224, totalW=gap*(n-1), x0=960-totalW/2, y=1024;
+    x.save(); x.textAlign='center';
+    stats.forEach((s,i)=>{
+      const cx=x0+i*gap;
+      x.font="700 38px 'IBM Plex Mono', monospace"; x.fillStyle=acc; x.fillText(s[0],cx,y);
+      x.font="600 12px 'Manrope', system-ui, sans-serif"; x.fillStyle='#6E665E';
+      x.fillText(s[1],cx,y+24);
+      if(i<n-1){ x.strokeStyle='rgba(23,18,15,0.12)'; x.lineWidth=1; x.beginPath(); x.moveTo(cx+gap/2,y-26); x.lineTo(cx+gap/2,y+30); x.stroke(); }
+    });
+    x.restore();
+    if(this.recManual && this.recTrack){ try{ this.recTrack.requestFrame(); }catch(e){} }
+  }
+
+  renderVals(){
+    const dir=this.dir, acc=this.accent();
+    this.setGeom();
+    const hl=this.state.focusRegion||this.state.previewRegion;
+    const regionName={}; this.regions.forEach(r=>regionName[r.id]=r.name);
+    const counts=this.state.counts;
+
+    const stats=this.stats.map((s,i)=>({ disp:(counts[i]??0)+(s.v.indexOf('+')>=0?'+':''), label:s.l }));
+
+    const views=[
+      { key:'atlas', label:'Editorial' },
+      { key:'backbone', label:'Cinematic' },
+      { key:'console', label:'Dashboard' }
+    ].map(v=>{
+      const active=dir===v.key;
+      return { label:v.label, onSelect:()=>this.setDir(v.key),
+        bg: active?'#17120F':'transparent', color: active?'#fff':'#5C554E' };
+    });
+
+    const counts4={}; this.regions.forEach(r=>counts4[r.id]=0);
+    this.cities.forEach(c=>counts4[c.region]++);
+
+    const mkPill=(id,name,count)=>{
+      const active=this.state.focusRegion===id;
+      return { label:name, count, onClick:()=>this.toggleRegion(id),
+        onEnter:()=>this.previewRegion(id), onLeave:()=>this.clearPreview(),
+        bg: active?acc:'rgba(255,255,255,0.72)', color: active?'#fff':'#3A332D',
+        border: active?acc:'rgba(23,18,15,0.1)' };
+    };
+    const regionPills=this.regions.map(r=>mkPill(r.id,r.name,counts4[r.id]));
+
+    const regionGroups=this.regions.map(r=>{
+      const active=this.state.focusRegion===r.id;
+      return {
+        name:r.name, count:counts4[r.id], citiesLabel:counts4[r.id]+(counts4[r.id]===1?' city':' cities'),
+        onClick:()=>this.toggleRegion(r.id),
+        onEnter:()=>this.previewRegion(r.id), onLeave:()=>this.clearPreview(),
+        border: active?this.rgba(acc,0.5):'rgba(23,18,15,0.08)',
+        headBg: active?this.rgba(acc,0.06):'#FBFAF8',
+        titleColor: active?'#17120F':'#3A332D',
+        cities:this.cities.filter(c=>c.region===r.id).map(c=>{
+          const sel=this.state.selectedCity===c.id;
+          return { name:c.name, onClick:()=>this.selectCity(c.id),
+            bg: sel?acc:'#fff', color: sel?'#fff':'#5C554E',
+            border: sel?acc:'rgba(23,18,15,0.1)' };
+        })
+      };
+    });
+
+    // name labels are painted on the globe canvas; HTML overlays only for the rich callout
+    const activeLabels = [];
+    const hoverObj = null;
+
+    let selObj=null;
+    if(this.state.selectedCity){
+      const c=this.cityById[this.state.selectedCity], P=this.projVec(c.vec,0);
+      if(P.z>0.04) selObj={ name:c.name, regionName:regionName[c.region], x:Math.round(P.x), y:Math.round(P.y) };
+    }
+
+    const allActive=!this.state.focusRegion;
+
+    return {
+      rootRef:this.rootRef, baseRef:this.baseRef, fxRef:this.fxRef,
+      onMove:this.onMove, onMapLeave:this.onMapLeave, onMapClick:this.onMapClick,
+      onClearFocus:()=>this.setState({ focusRegion:null, selectedCity:null }),
+      onExport:()=> (this.state.tour||this.state.recording) ? this.endTour() : this.startTour(true),
+      exportLabel: this.state.recording ? 'Stop & save' : (this.state.tour ? 'Stop tour' : 'Record video'),
+      exportBg: (this.state.recording||this.state.tour) ? '#17120F' : acc,
+      exportDotRadius: this.state.recording ? '2px' : '50%',
+      showViews: !this.heroOn(),
+      recStatus: this.state.recStatus || '',
+      recStatusColor: this.state.recStatus==='Saved ✓' ? '#1F8A5B' : (this.state.recStatus==='Not supported' ? '#C0392B' : '#9A938B'),
+      isAtlas:dir==='atlas', isBackbone:dir==='backbone', isConsole:dir==='console',
+      views, stats, regionPills, regionGroups, activeLabels, hoverObj, selObj,
+      allBg: allActive?'#17120F':'transparent', allColor: allActive?'#fff':'#5C554E'
+    };
+  }
+}
+</script>
+</body>
+</html>
